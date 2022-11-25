@@ -1,54 +1,51 @@
-import java.io.*;
+package com.journaldev.socket;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.ClassNotFoundException;
+import java.net.ServerSocket;
 import java.net.Socket;
- 
-public class Client {
-    private static DataOutputStream dataOutputStream = null;
-    private static DataInputStream dataInputStream = null;
- 
-    public static void main(String[] args)
-    {
-        // Create Client Socket connect to port 900
-        try (Socket socket = new Socket("localhost", 900)) {
-            
-          dataInputStream = new DataInputStream(
-                socket.getInputStream());
-            dataOutputStream = new DataOutputStream(
-                socket.getOutputStream());
-            System.out.println(
-                "Sending the File to the Server");
-          // Call SendFile Method
-          sendFile(
-                "/home/dachman/Desktop/Program/gfg/JAVA_Program/File Transfer/txt.pdf");
- 
-            dataInputStream.close();
-            dataInputStream.close();
+
+/**
+ * This class implements java Socket server
+ * @author pankaj
+ *
+ */
+public class SocketServerExample {
+    
+    //static ServerSocket variable
+    private static ServerSocket server;
+    //socket server port on which it will listen
+    private static int port = 9876;
+    
+    public static void main(String args[]) throws IOException, ClassNotFoundException{
+        //create the socket server object
+        server = new ServerSocket(port);
+        //keep listens indefinitely until receives 'exit' call or program terminates
+        while(true){
+            System.out.println("Waiting for the client request");
+            //creating socket and waiting for client connection
+            Socket socket = server.accept();
+            //read from socket to ObjectInputStream object
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            //convert ObjectInputStream object to String
+            String message = (String) ois.readObject();
+            System.out.println("Message Received: " + message);
+            //create ObjectOutputStream object
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+            //write object to Socket
+            oos.writeObject("Hi Client "+message);
+            //close resources
+            ois.close();
+            oos.close();
+            socket.close();
+            //terminate the server if client sends exit request
+            if(message.equalsIgnoreCase("exit")) break;
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("Shutting down Socket server!!");
+        //close the ServerSocket object
+        server.close();
     }
- 
-    // sendFile function define here
-    private static void sendFile(String path)
-        throws Exception
-    {
-        int bytes = 0;
-        // Open the File where he located in your pc
-        File file = new File(path);
-        FileInputStream fileInputStream
-            = new FileInputStream(file);
- 
-        // Here we send the File to Server
-        dataOutputStream.writeLong(file.length());
-        // Here we  break file into chunks
-        byte[] buffer = new byte[4 * 1024];
-        while ((bytes = fileInputStream.read(buffer))
-               != -1) {
-          // Send the file to Server Socket 
-          dataOutputStream.write(buffer, 0, bytes);
-            dataOutputStream.flush();
-        }
-        // close the file here
-        fileInputStream.close();
-    }
+    
 }
