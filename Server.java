@@ -1,64 +1,51 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
+package com.journaldev.socket;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.ClassNotFoundException;
 import java.net.ServerSocket;
 import java.net.Socket;
- 
-public class Server {
- 
-    private static DataOutputStream dataOutputStream = null;
-    private static DataInputStream dataInputStream = null;
- 
-    public static void main(String[] args)
-    {
-        // Here we define Server Socket running on port 900
-        try (ServerSocket serverSocket
-             = new ServerSocket(900)) {
-            System.out.println(
-                "Server is Starting in Port 900");
-            // Accept the Client request using accept method
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Connected");
-            dataInputStream = new DataInputStream(
-                clientSocket.getInputStream());
-            dataOutputStream = new DataOutputStream(
-                clientSocket.getOutputStream());
-            // Here we call receiveFile define new for that
-            // file
-            receiveFile("NewFile1.pdf");
- 
-            dataInputStream.close();
-            dataOutputStream.close();
-            clientSocket.close();
+
+/**
+ * This class implements java Socket server
+ * @author pankaj
+ *
+ */
+public class SocketServerExample {
+    
+    //static ServerSocket variable
+    private static ServerSocket server;
+    //socket server port on which it will listen
+    private static int port = 9876;
+    
+    public static void main(String args[]) throws IOException, ClassNotFoundException{
+        //create the socket server object
+        server = new ServerSocket(port);
+        //keep listens indefinitely until receives 'exit' call or program terminates
+        while(true){
+            System.out.println("Waiting for the client request");
+            //creating socket and waiting for client connection
+            Socket socket = server.accept();
+            //read from socket to ObjectInputStream object
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            //convert ObjectInputStream object to String
+            String message = (String) ois.readObject();
+            System.out.println("Message Received: " + message);
+            //create ObjectOutputStream object
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+            //write object to Socket
+            oos.writeObject("Hi Client "+message);
+            //close resources
+            ois.close();
+            oos.close();
+            socket.close();
+            //terminate the server if client sends exit request
+            if(message.equalsIgnoreCase("exit")) break;
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("Shutting down Socket server!!");
+        //close the ServerSocket object
+        server.close();
     }
- 
-    // receive file function is start here
- 
-    private static void receiveFile(String fileName)
-        throws Exception
-    {
-        int bytes = 0;
-        FileOutputStream fileOutputStream
-            = new FileOutputStream(fileName);
- 
-        long size
-            = dataInputStream.readLong(); // read file size
-        byte[] buffer = new byte[4 * 1024];
-        while (size > 0
-               && (bytes = dataInputStream.read(
-                       buffer, 0,
-                       (int)Math.min(buffer.length, size)))
-                      != -1) {
-            // Here we write the file using write method
-            fileOutputStream.write(buffer, 0, bytes);
-            size -= bytes; // read upto file size
-        }
-        // Here we received file
-        System.out.println("File is Received");
-        fileOutputStream.close();
-    }
+    
 }
